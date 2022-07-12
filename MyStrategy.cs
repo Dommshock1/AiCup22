@@ -99,7 +99,7 @@ namespace AiCup22
                 };
             };
 
-
+//
             if (vrag == 1)
             {
                 if (lootenable == 1)
