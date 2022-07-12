@@ -22,10 +22,8 @@ namespace AiCup22
             double rasst = 99999;
             double rasst1 = 99999;
             var lootenable = 0;
-            var lootID = 1;
-
-            var propierties = new struct();
-
+            var lootID = 1
+            var propierties = new struct()
             foreach (var enemy in game.Units)
             {
                 if (enemy.PlayerId == game.MyId)
