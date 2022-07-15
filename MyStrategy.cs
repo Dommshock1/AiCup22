@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using AiCup22.Model;
 using System;
 using System.Linq;
+using AiCup22.Debugging;
+
+
 
 
 namespace AiCup22
@@ -50,9 +53,11 @@ namespace AiCup22
             public static int index;
             public static int unitRadius;
             public static Vec2 currentCenter;
+            public static double CurrentRadius;
             public static DebugInterface debugInterface;
             public static int tick;
 
+           
 
             public static void update(Game game)
             {
@@ -65,14 +70,15 @@ namespace AiCup22
 
             public static void ListeningArena(Game game)
             {
-
+                
                 Teams = new List<Unit>();
                 Enemies = new List<Unit>();
                 Obstacles = new List<AiCup22.Model.Obstacle>();
                 ShieldPotions = new List<Loot>();
-                Projectiles = new List<Projectile>();
                 Weapon = new List<Loot>();
                 Ammo = new List<Loot>();
+                Projectiles = new List<Projectile>();
+
 
                 foreach (var obstacle in MyStrategy.constants.Obstacles)
                     if (!obstacle.CanShootThrough) Obstacles.Add(obstacle);
@@ -82,6 +88,7 @@ namespace AiCup22
 
                 foreach (var loot in game.Loot)
                 {
+                    
                     if (loot.Item is Item.ShieldPotions)
                     {
                         ShieldPotions.Add(loot);
@@ -107,8 +114,8 @@ namespace AiCup22
                     else
                     {
 
-                        // debugInterface.AddPlacedText(unit.Position, "en‚˚‚Ù˚‚Ù˚‚", new Model.Vec2(0, 0), 1.5, new AiCup22.Debugging.Color(0, 0, 1, 1));
-                        //debugInterface.Add(new  Debugging.DebugData.PlacedText(unit.Position, "en‚˚‚Ù˚‚Ù˚‚", new Model.Vec2(0, 0), 1.5, new AiCup22.Debugging.Color(0, 0, 1, 1)));
+                        // debugInterface.AddPlacedText(unit.Position, "en–≤—ã–≤—Ñ—ã–≤—Ñ—ã–≤", new Model.Vec2(0, 0), 1.5, new AiCup22.Debugging.Color(0, 0, 1, 1));
+                        //debugInterface.Add(new  Debugging.DebugData.PlacedText(unit.Position, "en–≤—ã–≤—Ñ—ã–≤—Ñ—ã–≤", new Model.Vec2(0, 0), 1.5, new AiCup22.Debugging.Color(0, 0, 1, 1)));
                         //debugInterface.Add(new Debugging.DebugData.Ring(unit.Position, 1.5, 0.2, new AiCup22.Debugging.Color(1, 0, 0, 1)));
                         Enemies.Add(unit);
                     }
@@ -122,15 +129,36 @@ namespace AiCup22
 
                 // var target_case = GetTargetNew(unit);
                 var target_case = GetTargetFinal(unit);
+                debugInterface.Add(new DebugData.PlacedText(unit.Position, "sdsddsd", new Vec2(1, 1), 100, new Debugging.Color(100, 100, 100, 100)));
+                //   DebugInterface var = new DebugInterface..DebugData.PlacedText(unit.Position, "sdsddsd", new Vec2(1, 1), 100, new Debugging.Color(100, 100, 100, 100));
+                // debugInterface.AddPlacedText(unit.Position, "sdsddsd", new Vec2(1, 1), 100, new Debugging.Color(100, 100, 100, 100));
 
-                return new UnitOrder(
+                foreach (var projectile in Projectiles)
+                {
+                    Vector pos = newVector(projectile.Position);
+                    Vector vel = newVector(projectile.Velocity);
+
+                    Vector upos = newVector(unit.Position);
+                    double ur = MyStrategy.constants.UnitRadius;
+                    double dist = (upos - pos).length();
+                    vel.truncate(dist);
+                    Vector npos = pos + (vel);
+
+                    Vector nvel = upos - npos;
+                    double inr = nvel.length();
+                    nvel.truncate(MyStrategy.constants.MaxUnitForwardSpeed);
+                    if (inr <= ur)
+                    {
+                        target_case.velocity = nvel * 150.0;
+
+                    }
+                }
+                        return new UnitOrder(
                                 new Vec2(target_case.velocity.x, target_case.velocity.y),
                                 new Vec2(target_case.direction.x, target_case.direction.y),
                                 target_case.action);
 
             }
-
-
 
             public static strategy GetTargetNew(Unit unit)
             {
@@ -148,8 +176,8 @@ namespace AiCup22
 
 
 
-                // ÂÒÎË ‚‡„ ÂÒÚ¸
-                // ÂÒÚ¸ ÎË ÓÛÊËÂ/
+                // –µ—Å–ª–∏ –≤—Ä–∞–≥ –µ—Å—Ç—å
+                // –µ—Å—Ç—å –ª–∏ –æ—Ä—É–∂–∏–µ/
 
                 if (unit.Shield < MyStrategy.constants.MaxShield / 3 && unit.ShieldPotions > 0)
                 {
@@ -265,161 +293,145 @@ namespace AiCup22
 
                 if (((unit.Health) + (unit.Shield / constants.MaxShield) * 100) / 2 > 50)
                 {
-                    logg(1, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                   
 
                     if (EnableEnemynear.Id != 0)
                     {
-                        logg(2, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                        if (((unit.Health) + (unit.Shield / constants.MaxShield) * 100) / 2 > 100)
+                        
+                        if (((unit.Health) + (unit.Shield / constants.MaxShield) * 100) / 2 > 75)
                         {
-                            logg(3, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                          
 
                             if (AmmoCount > 0)
                             {
-                                logg(4, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                targetStrategy.action = new ActionOrder.Aim(true);
-                                targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
-                                targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
-                            }
-                            else
-                            {
-                                logg(5, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                if (EnableAmmoWeapon2.Id != 0)
+                                if (unit.Weapon != 2)
                                 {
-                                    logg(6, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                    if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 2)
+                                    if (EnableWeapon2.Id != 0)
                                     {
-                                        logg(7, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                        targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
-                                        targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
-                                        targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
-                                    }
-                                    else
-                                    {
-                                        logg(8, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                        targetStrategy.action = new ActionOrder.Aim(false);
-                                        targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
-                                        targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
-                                    }
 
+                                        if (myUnit.dist(newVector(EnableWeapon2.Position)) < 0.5)
+                                        {
+
+                                            targetStrategy.action = new ActionOrder.Pickup(EnableWeapon2.Id);
+                                            targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
+                                        }
+                                        else
+                                        {
+
+                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
+                                        }
+
+                                    }
                                 }
                                 else
                                 {
-                                    logg(9, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                    if (EnableAmmoWeapon1.Id != 0)
+                                    targetStrategy.action = new ActionOrder.Aim(true);
+                                    if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
                                     {
-                                        logg(10, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 2)
+                                        targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
+                                    }
+                                    else
+                                    {
+                                        targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
+                                    }
+                                    targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
+                                }
+                               
+                            }
+                            else
+                            {
+                                if(unit.Weapon != 2)
+                                {
+                                    if (EnableWeapon2.Id != 0)
+                                    {
+
+                                        if (myUnit.dist(newVector(EnableWeapon2.Position)) < 0.5)
                                         {
-                                            logg(1, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                            targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon1.Id);
-                                            targetStrategy.velocity = newVector(EnableAmmoWeapon1.Position) - myUnit;
-                                            targetStrategy.direction = newVector(EnableAmmoWeapon1.Position) - myUnit;
+
+                                            targetStrategy.action = new ActionOrder.Pickup(EnableWeapon2.Id);
+                                            targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
                                         }
                                         else
                                         {
-                                            logg(12, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+
                                             targetStrategy.action = new ActionOrder.Aim(false);
-                                            targetStrategy.velocity = newVector(EnableAmmoWeapon1.Position) - myUnit;
-                                            targetStrategy.direction = newVector(EnableAmmoWeapon1.Position) - myUnit;
+                                            targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
+                                        }
+
+                                    }
+                                }
+                                else
+                                {
+                                    if (EnableAmmoWeapon2.Id != 0)
+                                    {
+
+                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
+                                        {
+
+                                            targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
+                                            targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                        }
+                                        else
+                                        {
+
+                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
 
                                     }
                                     else
                                     {
-                                        logg(13, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                        if (EnableAmmoWeapon0.Id != 0)
-                                        {
-                                            logg(14, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                            if (myUnit.dist(newVector(EnableAmmoWeapon0.Position)) < 2)
-                                            {
-                                                logg(15, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                                targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon0.Id);
-                                                targetStrategy.velocity = newVector(EnableAmmoWeapon0.Position) - myUnit;
-                                                targetStrategy.direction = newVector(EnableAmmoWeapon0.Position) - myUnit;
-                                            }
-                                            else
-                                            {
-                                                logg(16, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                                targetStrategy.action = new ActionOrder.Aim(false);
-                                                targetStrategy.velocity = newVector(EnableAmmoWeapon0.Position) - myUnit;
-                                                targetStrategy.direction = newVector(EnableAmmoWeapon0.Position) - myUnit;
-                                            }
-
-                                        }
-                                        else
-                                        {
-                                            logg(17, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                            targetStrategy.action = new ActionOrder.Aim(false);
-                                            targetStrategy.velocity = newVector(currentCenter) - myUnit;
-                                            targetStrategy.direction.rotate(180);
-                                        }
+                                        targetStrategy.action = new ActionOrder.Aim(false);
+                                        targetStrategy.velocity = newVector(currentCenter) - myUnit;
+                                        targetStrategy.direction.rotate(180);
                                     }
-
-
                                 }
+                                
+                               
                             }
 
                         }
                         else
                         {
-                            logg(18, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                            
                             if (unit.ShieldPotions > 0)
                             {
-                                logg(19, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                
                                 targetStrategy.action = new ActionOrder.UseShieldPotion();
                             }
                             else
                             {
-                                logg(20, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                               
                                 if (EnableShieldPotiinNear.Id != 0)
                                 {
-                                    logg(21, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                    if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 2)
+                                  
+                                    if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.5)
                                     {
-                                        logg(2, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                        
                                         targetStrategy.action = new ActionOrder.Pickup(EnableShieldPotiinNear.Id);
                                         targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                         targetStrategy.direction = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                     }
                                     else
                                     {
-                                        logg(23, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                       
                                         if (EnableEnemynear.Id != 0)
                                         {
-                                            logg(24, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                            
                                             targetStrategy.action = new ActionOrder.Aim(true);
                                             targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
                                         }
                                         else
                                         {
-                                            logg(25, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                            
                                             targetStrategy.action = new ActionOrder.Aim(false);
                                             targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                         }
@@ -428,22 +440,27 @@ namespace AiCup22
                                 }
                                 else
                                 {
-                                    logg(26, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                   
                                     if (EnableEnemynear.Id != 0)
                                     {
-                                        logg(27, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                        
                                         targetStrategy.action = new ActionOrder.Aim(false);
                                         targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                         targetStrategy.direction = new Vector(-unit.Direction.Y, unit.Direction.X);
                                     }
                                     else
                                     {
-                                        logg(28, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                        
                                         targetStrategy.action = new ActionOrder.UseShieldPotion();
-                                        targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
+                                        if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
+                                        {
+                                            targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
+                                        }
+                                        else
+                                        {
+                                            targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
+                                        }
+
                                         targetStrategy.direction.rotate(180);
                                     }
 
@@ -453,44 +470,36 @@ namespace AiCup22
                     }
                     else
                     {
-                        logg(29, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                       
                         if (unit.ShieldPotions == MyStrategy.constants.MaxShieldPotionsInInventory)
                         {
-                            logg(30, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                           
                             if (AmmoCount > 50)
                             {
-                                logg(31, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                
                                 if (tekWeapon == 2)
                                 {
-                                    logg(32, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                   
                                     targetStrategy.action = new ActionOrder.Aim(false);
                                     targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                     targetStrategy.direction.rotate(180);
                                 }
                                 else
                                 {
-                                    logg(33, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                    
                                     if (EnableAmmoWeapon2.Id != 0)
                                     {
-                                        logg(34, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 2)
+                                       
+                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
                                         {
-                                            logg(35, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                           
                                             targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
                                         else
                                         {
-                                            logg(36, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                           
                                             targetStrategy.action = new ActionOrder.Aim(false);
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
@@ -499,8 +508,7 @@ namespace AiCup22
                                     }
                                     else
                                     {
-                                        logg(37, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                       
                                         targetStrategy.action = new ActionOrder.Aim(false);
                                         targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                         targetStrategy.direction.rotate(180);
@@ -510,43 +518,109 @@ namespace AiCup22
                             }
                             else
                             {
-                                logg(38, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                if (EnableAmmoWeapon2.Id != 0)
+                                {
+
+                                    if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
+                                    {
+
+                                        targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
+                                        targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                        targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                    }
+                                    else
+                                    {
+
+                                        targetStrategy.action = new ActionOrder.Aim(false);
+                                        targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                        targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                    }
+
+                                }
+                                else
+                                {
+
+                                    if (EnableAmmoWeapon2.Id != 0)
+                                    {
+
+                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
+                                        {
+
+                                            targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
+                                            targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                        }
+                                        else
+                                        {
+
+                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
+                                        }
+
+                                    }
+                                    else
+                                    {
+
+                                        if (EnableAmmoWeapon0.Id != 0)
+                                        {
+
+                                            if (myUnit.dist(newVector(EnableAmmoWeapon0.Position)) < 0.5)
+                                            {
+
+                                                targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon0.Id);
+                                                targetStrategy.velocity = newVector(EnableAmmoWeapon0.Position) - myUnit;
+                                                targetStrategy.direction = newVector(EnableAmmoWeapon0.Position) - myUnit;
+                                            }
+                                            else
+                                            {
+
+                                                targetStrategy.action = new ActionOrder.Aim(false);
+                                                targetStrategy.velocity = newVector(EnableAmmoWeapon0.Position) - myUnit;
+                                                targetStrategy.direction = newVector(EnableAmmoWeapon0.Position) - myUnit;
+                                            }
+
+                                        }
+                                        else
+                                        {
+
+                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            targetStrategy.velocity = newVector(currentCenter) - myUnit;
+                                            targetStrategy.direction.rotate(180);
+                                        }
+                                    }
+
+
+                                }
 
                             }
                         }
                         else
                         {
-                            logg(39, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                            
                             if (EnableShieldPotiinNear.Id != 0)
                             {
-                                logg(40, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                                if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 2)
+                              
+                                if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.5)
                                 {
-                                    logg(41, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                   
                                     targetStrategy.action = new ActionOrder.Pickup(EnableShieldPotiinNear.Id);
                                     targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                     targetStrategy.direction = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                 }
                                 else
                                 {
-                                    logg(42, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                   
                                     if (EnableEnemynear.Id != 0)
                                     {
-                                        logg(43, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                       
                                         targetStrategy.action = new ActionOrder.Aim(true);
                                         targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                         targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
                                     }
                                     else
                                     {
-                                        logg(44, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                       
                                         targetStrategy.action = new ActionOrder.Aim(false);
                                         targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                     }
@@ -555,22 +629,26 @@ namespace AiCup22
                             }
                             else
                             {
-                                logg(45, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                
                                 if (EnableEnemynear.Id != 0)
                                 {
-                                    logg(46, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                    
                                     targetStrategy.action = new ActionOrder.Aim(false);
                                     targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                     targetStrategy.direction = new Vector(-unit.Direction.Y, unit.Direction.X);
                                 }
                                 else
                                 {
-                                    logg(47, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                    
                                     targetStrategy.action = new ActionOrder.UseShieldPotion();
-                                    targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
+                                    if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
+                                    {
+                                        targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
+                                    }
+                                    else
+                                    {
+                                        targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
+                                    }
                                     targetStrategy.direction.rotate(180);
                                 }
 
@@ -580,46 +658,38 @@ namespace AiCup22
                 }
                 else
                 {
-                    logg(48, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                    
                     if (unit.ShieldPotions > 0)
                     {
-                        logg(49, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                      
                         targetStrategy.action = new ActionOrder.UseShieldPotion();
                     }
                     else
                     {
-                        logg(50, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                       
                         if (EnableShieldPotiinNear.Id != 0)
                         {
-                            logg(51, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                            if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 2)
+                            
+                            if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.5)
                             {
-                                logg(52, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                              
                                 targetStrategy.action = new ActionOrder.Pickup(EnableShieldPotiinNear.Id);
                                 targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                 targetStrategy.direction = newVector(EnableShieldPotiinNear.Position) - myUnit;
                             }
                             else
                             {
-                                logg(53, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                               
                                 if (EnableEnemynear.Id != 0)
                                 {
-                                    logg(54, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                   
                                     targetStrategy.action = new ActionOrder.Aim(true);
                                     targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                     targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
                                 }
                                 else
                                 {
-                                    logg(55, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                                  
                                     targetStrategy.action = new ActionOrder.Aim(false);
                                     targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                 }
@@ -628,22 +698,26 @@ namespace AiCup22
                         }
                         else
                         {
-                            logg(56, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                            
                             if (EnableEnemynear.Id != 0)
                             {
-                                logg(57, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                               
                                 targetStrategy.action = new ActionOrder.Aim(false);
                                 targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                 targetStrategy.direction = new Vector(-unit.Direction.Y, unit.Direction.X);
                             }
                             else
                             {
-                                logg(58, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                   EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
+                               
                                 targetStrategy.action = new ActionOrder.UseShieldPotion();
-                                targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
+                                if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
+                                {
+                                    targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
+                                }
+                                else
+                                {
+                                    targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
+                                }
                                 targetStrategy.direction.rotate(180);
                             }
 
@@ -651,9 +725,7 @@ namespace AiCup22
                     }
                 }
 
-                logg(777, myUnit, tekWeapon, AmmoCount, EnableShieldPotiinNear, EnableWeapon0,
-                  EnableWeapon1, EnableWeapon2, EnableEnemynear, targetStrategy);
-                Console.WriteLine($"{tick}: itog=");
+   
                 return targetStrategy;
             }
 
@@ -673,13 +745,14 @@ namespace AiCup22
                  Loot EnableWeapon1, Loot EnableWeapon2, Unit EnableEnemynear, classStrategy targetStrategy)
             {
 
-                Console.WriteLine($"{tick}: myUnit :" + $"{ myUnit} " + "num case:" + $"{ num} " + "tekWeapon :" + $"{ myUnit} " + "tekWeapon :" + $"{ tekWeapon}"
-                    + "AmmoCount :" + $"{ AmmoCount}" + "EnableShieldPotiinNear :" + $"{ EnableShieldPotiinNear}" + "EnableWeapon0 :" + $"{ EnableWeapon0}"
-                    + "EnableWeapon1 :" + $"{ EnableWeapon1}" + "EnableWeapon2 :" + $"{ EnableWeapon2}" + "EnableEnemynear :" + $"{ EnableEnemynear}");
-            }
+               /* Console.WriteLine($"{tick}: myUnit :" + $"{myUnit} " + "num case:" + $"{num} " + "tekWeapon :" + $"{myUnit} " + "tekWeapon :" + $"{tekWeapon}"
+                    + "AmmoCount :" + $"{AmmoCount}" + "EnableShieldPotiinNear :" + $"{EnableShieldPotiinNear}" + "EnableWeapon0 :" + $"{EnableWeapon0}"
+                    + "EnableWeapon1 :" + $"{EnableWeapon1}" + "EnableWeapon2 :" + $"{EnableWeapon2}" + "EnableEnemynear :" + $"{EnableEnemynear}");
+            */
+                }
             public class classStrategy : strategy
             {
-                //ÚÛÚ ÏÓÊÌÓ ÔÂÂÓÔÂ‰ÂÎËÚ¸ ÏÂÚÓ‰˚ List ËÎË ‰Ó·‡‚ËÚ¸ Ò‚ÓË
+                //—Ç—É—Ç –º–æ–∂–Ω–æ –ø–µ—Ä–µ–æ–ø—Ä–µ–¥–µ–ª–∏—Ç—å –º–µ—Ç–æ–¥—ã List –∏–ª–∏ –¥–æ–±–∞–≤–∏—Ç—å —Å–≤–æ–∏
             }
 
 
