@@ -185,7 +185,7 @@ namespace AiCup22
 
                 if (unit.Weapon != null && unit.Ammo[weapon] < MyStrategy.constants.Weapons[weapon].MaxInventoryAmmo / 4)
                 {
-                    Loot targetAmmo = GetWeaponAmmoNear(unit);
+                    Loot targetAmmo = GetWeaponAmmoNear(unit, 1);
 
 
                     Vector vectortargetAmmo = newVector(targetAmmo.Position);
@@ -246,13 +246,13 @@ namespace AiCup22
 
                 Loot EnableShieldPotiinNear = GetShieldPotiinNear(unit);
 
-                Loot EnableWeapon0 = GetShieldPotiinNear(unit);
-                Loot EnableWeapon1 = GetShieldPotiinNear(unit);
-                Loot EnableWeapon2 = GetShieldPotiinNear(unit);
+                Loot EnableWeapon0 = GetWeaponNear(unit, 0);
+                Loot EnableWeapon1 = GetWeaponNear(unit, 1);
+                Loot EnableWeapon2 = GetWeaponNear(unit, 2);
 
-                Loot EnableAmmoWeapon0 = GetShieldPotiinNear(unit);
-                Loot EnableAmmoWeapon1 = GetShieldPotiinNear(unit);
-                Loot EnableAmmoWeapon2 = GetShieldPotiinNear(unit);
+                Loot EnableAmmoWeapon0 = GetWeaponAmmoNear(unit, 0);
+                Loot EnableAmmoWeapon1 = GetWeaponAmmoNear(unit, 1);
+                Loot EnableAmmoWeapon2 = GetWeaponAmmoNear(unit, 2);
 
                 Unit EnableEnemynear = GetEnemyNear(unit);
 
@@ -674,7 +674,7 @@ namespace AiCup22
             {
 
                 Console.WriteLine($"{tick}: myUnit :" + $"{ myUnit} " + "num case:" + $"{ num} " + "tekWeapon :" + $"{ myUnit} " + "tekWeapon :" + $"{ tekWeapon}"
-                    + "AmmoCount :" + $"{ AmmoCount}" + "EnableShieldPotiinNea :" + $"{ EnableShieldPotiinNear}" + "EnableWeapon0 :" + $"{ EnableWeapon0}"
+                    + "AmmoCount :" + $"{ AmmoCount}" + "EnableShieldPotiinNear :" + $"{ EnableShieldPotiinNear}" + "EnableWeapon0 :" + $"{ EnableWeapon0}"
                     + "EnableWeapon1 :" + $"{ EnableWeapon1}" + "EnableWeapon2 :" + $"{ EnableWeapon2}" + "EnableEnemynear :" + $"{ EnableEnemynear}");
             }
             public class classStrategy : strategy
@@ -703,6 +703,27 @@ namespace AiCup22
 
             }
 
+
+            private static Loot GetWeaponNear(Unit unit, int typeIndex)
+            {
+                Loot? weapon;
+
+                var wp = from Loot u in Weapon where ((AiCup22.Model.Item.Weapon)u.Item).TypeIndex == typeIndex orderby (Math.Pow(u.Position.X - unit.Position.X, 2.0) + Math.Pow(u.Position.Y - unit.Position.Y, 2)) select u;
+
+                weapon = wp.FirstOrDefault();
+
+
+                if (weapon is null)
+                {
+                    return new Loot();
+                }
+                else
+                {
+                    return (Loot)weapon;
+                }
+
+            }
+
             private static Unit GetEnemyNear(Unit unit)
             {
                 Unit? Enemy;
@@ -723,11 +744,11 @@ namespace AiCup22
 
             }
 
-            private static Loot GetWeaponAmmoNear(Unit unit)
+            private static Loot GetWeaponAmmoNear(Unit unit, int typeIndex)
             {
                 Loot? Ammos;
 
-                var am = from Loot u in Ammo orderby (Math.Pow(u.Position.X - unit.Position.X, 2.0) + Math.Pow(u.Position.Y - unit.Position.Y, 2)) select u;
+                var am = from Loot u in Ammo where ((AiCup22.Model.Item.Ammo)u.Item).WeaponTypeIndex == typeIndex orderby (Math.Pow(u.Position.X - unit.Position.X, 2.0) + Math.Pow(u.Position.Y - unit.Position.Y, 2)) select u;
 
                 Ammos = am.FirstOrDefault();
 
