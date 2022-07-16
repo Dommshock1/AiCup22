@@ -15,7 +15,7 @@ namespace AiCup22
         public MyStrategy(Constants constants) { MyStrategy.constants = constants; }
         public Order GetOrder(Game game, DebugInterface debugInterface)
         {
-
+            Arena.debugInterface = debugInterface;
             if (game.CurrentTick == 0 || game.CurrentTick % 5 == 0) Arena.update(game);
 
             Arena.ListeningArena(game);
@@ -57,20 +57,21 @@ namespace AiCup22
             public static DebugInterface debugInterface;
             public static int tick;
 
-           
+
 
             public static void update(Game game)
             {
                 dSize = game.Zone.CurrentRadius;
                 unitRadius = (int)MyStrategy.constants.UnitRadius;
-                size = (int)game.Zone.CurrentRadius * 2;
+                CurrentRadius = game.Zone.CurrentRadius;
+                size = (int)CurrentRadius * 2;
                 currentCenter = game.Zone.CurrentCenter;
                 tick = game.CurrentTick;
             }
 
             public static void ListeningArena(Game game)
             {
-                
+
                 Teams = new List<Unit>();
                 Enemies = new List<Unit>();
                 Obstacles = new List<AiCup22.Model.Obstacle>();
@@ -88,7 +89,7 @@ namespace AiCup22
 
                 foreach (var loot in game.Loot)
                 {
-                    
+
                     if (loot.Item is Item.ShieldPotions)
                     {
                         ShieldPotions.Add(loot);
@@ -114,10 +115,7 @@ namespace AiCup22
                     else
                     {
 
-                        // debugInterface.AddPlacedText(unit.Position, "enвывфывфыв", new Model.Vec2(0, 0), 1.5, new AiCup22.Debugging.Color(0, 0, 1, 1));
-                        //debugInterface.Add(new  Debugging.DebugData.PlacedText(unit.Position, "enвывфывфыв", new Model.Vec2(0, 0), 1.5, new AiCup22.Debugging.Color(0, 0, 1, 1)));
-                        //debugInterface.Add(new Debugging.DebugData.Ring(unit.Position, 1.5, 0.2, new AiCup22.Debugging.Color(1, 0, 0, 1)));
-                        Enemies.Add(unit);
+                       Enemies.Add(unit);
                     }
 
                 }
@@ -129,9 +127,13 @@ namespace AiCup22
 
                 // var target_case = GetTargetNew(unit);
                 var target_case = GetTargetFinal(unit);
-                debugInterface.Add(new DebugData.PlacedText(unit.Position, "sdsddsd", new Vec2(1, 1), 100, new Debugging.Color(100, 100, 100, 100)));
-                //   DebugInterface var = new DebugInterface..DebugData.PlacedText(unit.Position, "sdsddsd", new Vec2(1, 1), 100, new Debugging.Color(100, 100, 100, 100));
-                // debugInterface.AddPlacedText(unit.Position, "sdsddsd", new Vec2(1, 1), 100, new Debugging.Color(100, 100, 100, 100));
+
+                Vector v = new Vector(unit.Position.X, unit.Position.Y);
+                Vector cntr = new Vector(currentCenter.X, currentCenter.Y);
+                double r = v.dist(cntr) + 5.0 * MyStrategy.constants.UnitRadius;
+
+                if (r > dSize) target_case.velocity = new Vector(-unit.Position.X, -unit.Position.Y);
+
 
                 foreach (var projectile in Projectiles)
                 {
@@ -153,10 +155,15 @@ namespace AiCup22
 
                     }
                 }
-                        return new UnitOrder(
-                                new Vec2(target_case.velocity.x, target_case.velocity.y),
-                                new Vec2(target_case.direction.x, target_case.direction.y),
-                                target_case.action);
+                if (unit.Ammo[(int)unit.Weapon] == 0 && (target_case.action == new Model.ActionOrder.Aim(true) || target_case.action == new Model.ActionOrder.Aim(true)))
+                {
+                    target_case.action = null;
+                }
+
+                return new UnitOrder(
+                        new Vec2(target_case.velocity.x, target_case.velocity.y),
+                        new Vec2(target_case.direction.x, target_case.direction.y),
+                        target_case.action);
 
             }
 
@@ -264,6 +271,7 @@ namespace AiCup22
 
             public static strategy GetTargetFinal(Unit unit)
             {
+                string taktikCase = "none";
                 Vector myUnit = newVector(unit.Position);
                 int? tekWeapon = unit.Weapon;
                 if (tekWeapon == null)
@@ -293,72 +301,90 @@ namespace AiCup22
 
                 if (((unit.Health) + (unit.Shield / constants.MaxShield) * 100) / 2 > 50)
                 {
-                   
 
                     if (EnableEnemynear.Id != 0)
                     {
-                        
+
+
                         if (((unit.Health) + (unit.Shield / constants.MaxShield) * 100) / 2 > 75)
                         {
-                          
+
 
                             if (AmmoCount > 0)
                             {
+
                                 if (unit.Weapon != 2)
                                 {
+
                                     if (EnableWeapon2.Id != 0)
                                     {
 
-                                        if (myUnit.dist(newVector(EnableWeapon2.Position)) < 0.5)
-                                        {
 
+                                        if (myUnit.dist(newVector(EnableWeapon2.Position)) < 0.9)
+                                        {   // Жизни больше 75%, есть враг в зоне видимости,есть патроны,  оружие не лук, есть лук, он рядом. двигаемся и смотрим на него и подбираем.
+                                            taktikCase = "1";
                                             targetStrategy.action = new ActionOrder.Pickup(EnableWeapon2.Id);
                                             targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
                                         }
                                         else
                                         {
-
-                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            // Жизни больше 75%, есть враг в зоне видимости,есть патроны,  оружие не лук, есть лук. Двигаемся и смотрим на него.
+                                            taktikCase = "2";
+                                            targetStrategy.action = new ActionOrder.Aim(true);
                                             targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
-                                            targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
+                                            targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
                                         }
 
                                     }
+                                    else
+                                    {
+                                        taktikCase = "678";
+                                        targetStrategy.action = null;
+                                        targetStrategy.velocity = newVector(currentCenter) - myUnit;
+                                        targetStrategy.direction = new Vector(-unit.Direction.Y, unit.Direction.X);
+                                    }
+                                   
                                 }
                                 else
                                 {
                                     targetStrategy.action = new ActionOrder.Aim(true);
                                     if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
                                     {
+                                        // Жизни больше 75%, есть враг в зоне видимости,есть патроны, оружие - лук. Двигаемся от врага и смотрим на Врага. 
+                                        taktikCase = "3";
                                         targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
                                     }
                                     else
                                     {
+                                        // Жизни больше 75%, есть враг в зоне видимости,есть патроны, оружие - лук. Двигаемся и смотрим на Врага. 
+                                        taktikCase = "4";
                                         targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
                                     }
                                     targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
                                 }
-                               
+
                             }
                             else
                             {
-                                if(unit.Weapon != 2)
+
+                                if (unit.Weapon != 2)
                                 {
+
                                     if (EnableWeapon2.Id != 0)
                                     {
 
-                                        if (myUnit.dist(newVector(EnableWeapon2.Position)) < 0.5)
+                                        if (myUnit.dist(newVector(EnableWeapon2.Position)) < 0.9)
                                         {
-
+                                            taktikCase = "14";
                                             targetStrategy.action = new ActionOrder.Pickup(EnableWeapon2.Id);
                                             targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
                                         }
                                         else
                                         {
-
-                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            taktikCase = "15";
+                                            targetStrategy.action = null;
                                             targetStrategy.velocity = newVector(EnableWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableWeapon2.Position) - myUnit;
                                         }
@@ -367,20 +393,22 @@ namespace AiCup22
                                 }
                                 else
                                 {
+
                                     if (EnableAmmoWeapon2.Id != 0)
                                     {
 
-                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
-                                        {
 
+                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.9)
+                                        {
+                                            taktikCase = "18";
                                             targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
                                         else
                                         {
-
-                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            taktikCase = "19";
+                                            targetStrategy.action = null;
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
@@ -388,80 +416,84 @@ namespace AiCup22
                                     }
                                     else
                                     {
-                                        targetStrategy.action = new ActionOrder.Aim(false);
+                                        taktikCase = "20";
+                                        targetStrategy.action = null;
                                         targetStrategy.velocity = newVector(currentCenter) - myUnit;
-                                        targetStrategy.direction.rotate(180);
+                                        targetStrategy.direction.rotate(90);
                                     }
                                 }
-                                
-                               
+
+
                             }
 
                         }
                         else
                         {
-                            
+
                             if (unit.ShieldPotions > 0)
                             {
-                                
+                                taktikCase = "22";
                                 targetStrategy.action = new ActionOrder.UseShieldPotion();
                             }
                             else
                             {
-                               
+
                                 if (EnableShieldPotiinNear.Id != 0)
                                 {
-                                  
-                                    if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.5)
+
+                                    if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.9)
                                     {
-                                        
+                                        taktikCase = "25";
                                         targetStrategy.action = new ActionOrder.Pickup(EnableShieldPotiinNear.Id);
                                         targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                         targetStrategy.direction = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                     }
                                     else
                                     {
-                                       
-                                        if (EnableEnemynear.Id != 0)
-                                        {
-                                            
+
+
+                                       // if (EnableEnemynear.Id != 0)
+                                       // {
+                                            taktikCase = "27";
                                             targetStrategy.action = new ActionOrder.Aim(true);
-                                            targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
-                                            targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
-                                        }
-                                        else
-                                        {
-                                            
-                                            targetStrategy.action = new ActionOrder.Aim(false);
-                                            targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
-                                        }
+                                            targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;//to do +
+                                            targetStrategy.direction = newVector(EnableShieldPotiinNear.Position) - myUnit;
+                                       // }
+                                       // else
+                                       // {
+                                        //    taktikCase = "28";
+                                        //    targetStrategy.action = null;
+                                       //     targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
+                                        //}
 
                                     }
                                 }
                                 else
                                 {
-                                   
+
                                     if (EnableEnemynear.Id != 0)
                                     {
-                                        
-                                        targetStrategy.action = new ActionOrder.Aim(false);
+                                        taktikCase = "30";
+                                        targetStrategy.action = null;
                                         targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                         targetStrategy.direction = new Vector(-unit.Direction.Y, unit.Direction.X);
                                     }
                                     else
                                     {
-                                        
+
                                         targetStrategy.action = new ActionOrder.UseShieldPotion();
                                         if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
                                         {
+                                            taktikCase = "31";
                                             targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
                                         }
                                         else
                                         {
+                                            taktikCase = "32";
                                             targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
                                         }
 
-                                        targetStrategy.direction.rotate(180);
+                                        targetStrategy.direction.rotate(90);
                                     }
 
                                 }
@@ -470,37 +502,37 @@ namespace AiCup22
                     }
                     else
                     {
-                       
-                        if (unit.ShieldPotions == MyStrategy.constants.MaxShieldPotionsInInventory)
+
+                        if (unit.ShieldPotions > 3)
                         {
-                           
-                            if (AmmoCount > 50)
+
+                            if (AmmoCount > constants.Weapons[(int)tekWeapon].MaxInventoryAmmo * 0.7)
                             {
-                                
+                               
                                 if (tekWeapon == 2)
                                 {
-                                   
-                                    targetStrategy.action = new ActionOrder.Aim(false);
+                                    taktikCase = "35";
+                                    targetStrategy.action = null;
                                     targetStrategy.velocity = newVector(currentCenter) - myUnit;
-                                    targetStrategy.direction.rotate(180);
+                                    targetStrategy.direction.rotate(90);
                                 }
                                 else
                                 {
-                                    
+
                                     if (EnableAmmoWeapon2.Id != 0)
                                     {
-                                       
-                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
+
+                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.9)
                                         {
-                                           
+                                            taktikCase = "37";
                                             targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
                                         else
                                         {
-                                           
-                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            taktikCase = "38";
+                                            targetStrategy.action = null;
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
@@ -508,30 +540,31 @@ namespace AiCup22
                                     }
                                     else
                                     {
-                                       
-                                        targetStrategy.action = new ActionOrder.Aim(false);
+                                        taktikCase = "39";
+                                        targetStrategy.action = null;
                                         targetStrategy.velocity = newVector(currentCenter) - myUnit;
-                                        targetStrategy.direction.rotate(180);
+                                        targetStrategy.direction.rotate(90);
                                     }
 
                                 }
                             }
                             else
                             {
+
                                 if (EnableAmmoWeapon2.Id != 0)
                                 {
 
-                                    if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
+                                    if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.9)
                                     {
-
+                                        taktikCase = "41";
                                         targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
                                         targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                     }
                                     else
                                     {
-
-                                        targetStrategy.action = new ActionOrder.Aim(false);
+                                        taktikCase = "42";
+                                        targetStrategy.action = null;
                                         targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                     }
@@ -543,17 +576,17 @@ namespace AiCup22
                                     if (EnableAmmoWeapon2.Id != 0)
                                     {
 
-                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.5)
+                                        if (myUnit.dist(newVector(EnableAmmoWeapon2.Position)) < 0.9)
                                         {
-
+                                            taktikCase = "43";
                                             targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon2.Id);
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
                                         else
                                         {
-
-                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            taktikCase = "44";
+                                            targetStrategy.action = null;
                                             targetStrategy.velocity = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                             targetStrategy.direction = newVector(EnableAmmoWeapon2.Position) - myUnit;
                                         }
@@ -565,17 +598,17 @@ namespace AiCup22
                                         if (EnableAmmoWeapon0.Id != 0)
                                         {
 
-                                            if (myUnit.dist(newVector(EnableAmmoWeapon0.Position)) < 0.5)
+                                            if (myUnit.dist(newVector(EnableAmmoWeapon0.Position)) < 0.9)
                                             {
-
+                                                taktikCase = "45";
                                                 targetStrategy.action = new ActionOrder.Pickup(EnableAmmoWeapon0.Id);
                                                 targetStrategy.velocity = newVector(EnableAmmoWeapon0.Position) - myUnit;
                                                 targetStrategy.direction = newVector(EnableAmmoWeapon0.Position) - myUnit;
                                             }
                                             else
                                             {
-
-                                                targetStrategy.action = new ActionOrder.Aim(false);
+                                                taktikCase = "46";
+                                                targetStrategy.action = null;
                                                 targetStrategy.velocity = newVector(EnableAmmoWeapon0.Position) - myUnit;
                                                 targetStrategy.direction = newVector(EnableAmmoWeapon0.Position) - myUnit;
                                             }
@@ -583,10 +616,10 @@ namespace AiCup22
                                         }
                                         else
                                         {
-
-                                            targetStrategy.action = new ActionOrder.Aim(false);
+                                            taktikCase = "47";
+                                            targetStrategy.action = null;
                                             targetStrategy.velocity = newVector(currentCenter) - myUnit;
-                                            targetStrategy.direction.rotate(180);
+                                            targetStrategy.direction.rotate(90);
                                         }
                                     }
 
@@ -597,59 +630,52 @@ namespace AiCup22
                         }
                         else
                         {
-                            
+
                             if (EnableShieldPotiinNear.Id != 0)
                             {
-                              
-                                if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.5)
+
+                                if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.9)
                                 {
-                                   
+                                    taktikCase = "48";
                                     targetStrategy.action = new ActionOrder.Pickup(EnableShieldPotiinNear.Id);
                                     targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                     targetStrategy.direction = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                 }
                                 else
                                 {
-                                   
-                                    if (EnableEnemynear.Id != 0)
-                                    {
-                                       
-                                        targetStrategy.action = new ActionOrder.Aim(true);
-                                        targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
-                                        targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
-                                    }
-                                    else
-                                    {
-                                       
-                                        targetStrategy.action = new ActionOrder.Aim(false);
-                                        targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
-                                    }
+
+                                    // Жизни больше 50%, врагов нет,зелья не на максимуме,зелья есть в зоне видимости, но не рядом. Двигаемся и смотрим на Врага.
+                                    taktikCase = "50";
+                                    targetStrategy.action = null;
+                                    targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
 
                                 }
                             }
                             else
                             {
-                                
+
                                 if (EnableEnemynear.Id != 0)
                                 {
-                                    
-                                    targetStrategy.action = new ActionOrder.Aim(false);
+                                    taktikCase = "51";
+                                    targetStrategy.action = null;
                                     targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                     targetStrategy.direction = new Vector(-unit.Direction.Y, unit.Direction.X);
                                 }
                                 else
                                 {
-                                    
+
                                     targetStrategy.action = new ActionOrder.UseShieldPotion();
                                     if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
                                     {
+                                        taktikCase = "52";
                                         targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
                                     }
                                     else
                                     {
+                                        taktikCase = "53";
                                         targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
                                     }
-                                    targetStrategy.direction.rotate(180);
+                                    targetStrategy.direction.rotate(90);
                                 }
 
                             }
@@ -658,39 +684,39 @@ namespace AiCup22
                 }
                 else
                 {
-                    
+
                     if (unit.ShieldPotions > 0)
                     {
-                      
+                        taktikCase = "54";
                         targetStrategy.action = new ActionOrder.UseShieldPotion();
                     }
                     else
                     {
-                       
+
                         if (EnableShieldPotiinNear.Id != 0)
                         {
-                            
-                            if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.5)
+
+                            if (myUnit.dist(newVector(EnableShieldPotiinNear.Position)) < 0.9)
                             {
-                              
+                                taktikCase = "55";
                                 targetStrategy.action = new ActionOrder.Pickup(EnableShieldPotiinNear.Id);
                                 targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                 targetStrategy.direction = newVector(EnableShieldPotiinNear.Position) - myUnit;
                             }
                             else
                             {
-                               
+
                                 if (EnableEnemynear.Id != 0)
                                 {
-                                   
+                                    taktikCase = "56";
                                     targetStrategy.action = new ActionOrder.Aim(true);
                                     targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                     targetStrategy.direction = newVector(EnableEnemynear.Position) - myUnit;
                                 }
                                 else
                                 {
-                                  
-                                    targetStrategy.action = new ActionOrder.Aim(false);
+                                    taktikCase = "57";
+                                    targetStrategy.action = null;
                                     targetStrategy.velocity = newVector(EnableShieldPotiinNear.Position) - myUnit;
                                 }
 
@@ -698,34 +724,61 @@ namespace AiCup22
                         }
                         else
                         {
-                            
+
                             if (EnableEnemynear.Id != 0)
                             {
-                               
-                                targetStrategy.action = new ActionOrder.Aim(false);
+                                taktikCase = "58";
+                                targetStrategy.action = null;
                                 targetStrategy.velocity = newVector(currentCenter) - myUnit;
                                 targetStrategy.direction = new Vector(-unit.Direction.Y, unit.Direction.X);
                             }
                             else
                             {
-                               
+
                                 targetStrategy.action = new ActionOrder.UseShieldPotion();
                                 if (myUnit.dist(newVector(EnableEnemynear.Position)) < 10)
                                 {
+                                    taktikCase = "59";
                                     targetStrategy.velocity = newVector(EnableEnemynear.Position) + myUnit;
                                 }
                                 else
                                 {
+                                    taktikCase = "60";
                                     targetStrategy.velocity = newVector(EnableEnemynear.Position) - myUnit;
                                 }
-                                targetStrategy.direction.rotate(180);
+                                targetStrategy.direction.rotate(90);
                             }
 
                         }
                     }
                 }
 
-   
+                string taktikCasetext = "";
+                if (taktikCase == "1")
+                    taktikCasetext = "Жизни больше 75%, есть враг в зоне видимости,есть патроны,  оружие не лук, есть лук, он рядом. двигаемся и смотрим на него и подбираем.1 ";
+
+                if (taktikCase == "2")
+                    taktikCasetext = "Жизни больше 75%, есть враг в зоне видимости,есть патроны,  оружие не лук, есть лук. Двигаемся и смотрим на него. 2";
+
+                if (taktikCase == "3")
+                    taktikCasetext = " // Жизни больше 75%, есть враг в зоне видимости,есть патроны, оружие - лук. Двигаемся от врага и смотрим на Врага. 3";
+
+                if (taktikCase == "4")
+                    taktikCasetext = "Жизни больше 75%, есть враг в зоне видимости,есть патроны, оружие - лук. Двигаемся и смотрим на Врага. 4";
+
+                if (taktikCase == "50")
+                    taktikCasetext = "Жизни больше 50 %, врагов нет, зелья не на максимуме,зелья есть в зоне видимости, но не рядом.Двигаемся и смотрим на Врага. 50 ";
+                
+                if (taktikCase == "678")
+                    taktikCasetext = "Кружимся к центру. 678";
+
+
+
+
+                if (taktikCasetext == "")
+                    taktikCasetext = taktikCase;
+                //debugInterface.Add(new DebugData.PlacedText(unit.Position, taktikCasetext, new Vec2(1, 1), 1, new Debugging.Color(0, 0, 0, 100)));
+
                 return targetStrategy;
             }
 
@@ -745,11 +798,11 @@ namespace AiCup22
                  Loot EnableWeapon1, Loot EnableWeapon2, Unit EnableEnemynear, classStrategy targetStrategy)
             {
 
-               /* Console.WriteLine($"{tick}: myUnit :" + $"{myUnit} " + "num case:" + $"{num} " + "tekWeapon :" + $"{myUnit} " + "tekWeapon :" + $"{tekWeapon}"
-                    + "AmmoCount :" + $"{AmmoCount}" + "EnableShieldPotiinNear :" + $"{EnableShieldPotiinNear}" + "EnableWeapon0 :" + $"{EnableWeapon0}"
-                    + "EnableWeapon1 :" + $"{EnableWeapon1}" + "EnableWeapon2 :" + $"{EnableWeapon2}" + "EnableEnemynear :" + $"{EnableEnemynear}");
-            */
-                }
+                /* Console.WriteLine($"{tick}: myUnit :" + $"{myUnit} " + "num case:" + $"{num} " + "tekWeapon :" + $"{myUnit} " + "tekWeapon :" + $"{tekWeapon}"
+                     + "AmmoCount :" + $"{AmmoCount}" + "EnableShieldPotiinNear :" + $"{EnableShieldPotiinNear}" + "EnableWeapon0 :" + $"{EnableWeapon0}"
+                     + "EnableWeapon1 :" + $"{EnableWeapon1}" + "EnableWeapon2 :" + $"{EnableWeapon2}" + "EnableEnemynear :" + $"{EnableEnemynear}");
+             */
+            }
             public class classStrategy : strategy
             {
                 //тут можно переопределить методы List или добавить свои
@@ -758,42 +811,37 @@ namespace AiCup22
 
             private static Loot GetShieldPotiinNear(Unit unit)
             {
-                Loot? shieldPotion;
-
+              
                 var sp = from Loot u in ShieldPotions orderby (Math.Pow(u.Position.X - unit.Position.X, 2.0) + Math.Pow(u.Position.Y - unit.Position.Y, 2)) select u;
 
-                shieldPotion = sp.FirstOrDefault();
 
-
-                if (shieldPotion is null)
+                foreach(Loot shieldPotion in sp)
                 {
-                    return new Loot();
-                }
-                else
-                {
-                    return (Loot)shieldPotion;
+                    if ((newVector(shieldPotion.Position) - newVector(currentCenter)).length() < CurrentRadius)
+                    {
+                        return (Loot)shieldPotion;
+                    }
                 }
 
+                return new Loot();
+        
             }
 
 
             private static Loot GetWeaponNear(Unit unit, int typeIndex)
             {
-                Loot? weapon;
 
                 var wp = from Loot u in Weapon where ((AiCup22.Model.Item.Weapon)u.Item).TypeIndex == typeIndex orderby (Math.Pow(u.Position.X - unit.Position.X, 2.0) + Math.Pow(u.Position.Y - unit.Position.Y, 2)) select u;
 
-                weapon = wp.FirstOrDefault();
-
-
-                if (weapon is null)
+                foreach (Loot weapon in wp)
                 {
-                    return new Loot();
+                    if ((newVector(weapon.Position) - newVector(currentCenter)).length() < CurrentRadius)
+                    {
+                        return (Loot)weapon;
+                    }
                 }
-                else
-                {
-                    return (Loot)weapon;
-                }
+
+                return new Loot();
 
             }
 
@@ -818,22 +866,18 @@ namespace AiCup22
             }
 
             private static Loot GetWeaponAmmoNear(Unit unit, int typeIndex)
-            {
-                Loot? Ammos;
-
+            {       
                 var am = from Loot u in Ammo where ((AiCup22.Model.Item.Ammo)u.Item).WeaponTypeIndex == typeIndex orderby (Math.Pow(u.Position.X - unit.Position.X, 2.0) + Math.Pow(u.Position.Y - unit.Position.Y, 2)) select u;
 
-                Ammos = am.FirstOrDefault();
-
-
-                if (Ammos is null)
+                foreach (Loot Ammos in am)
                 {
-                    return new Loot();
+                    if ((newVector(Ammos.Position) - newVector(currentCenter)).length() < CurrentRadius)
+                    {
+                        return (Loot)Ammos;
+                    }
                 }
-                else
-                {
-                    return (Loot)Ammos;
-                }
+
+                return new Loot();
 
             }
             public static Vector newVector(Vec2 vec)
